@@ -31,7 +31,7 @@ export const TierList = memo(function TierList({ items, setItems }: TierListProp
 
             // Find the item being dragged by its tier and index
             const draggedItemIndex = newItems.findIndex(
-                (item, idx) =>
+                (item) =>
                     item.tier === sourceTier && newItems.filter((i) => i.tier === sourceTier).indexOf(item) === dragIndex,
             )
 
@@ -83,7 +83,7 @@ export const TierList = memo(function TierList({ items, setItems }: TierListProp
 
     return (
         <DndProvider backend={HTML5Backend}>
-            <div>
+            <div className="grid grid-cols-1 gap-2">
                 {tiers.map((tier) => (
                     <TierContainer
                         key={tier.id}

@@ -1,103 +1,110 @@
 "use client"
-
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import React from "react";
+import React, { useState, useEffect } from "react";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/contexts/AuthContext";
+import {fetchUser} from "@/components/api/user-api";
+import {useParams} from "next/navigation";
+import LoadingPage from "@/components/loading-page";
+import { cn } from "@/lib/utils"
+import {Card, CardContent, CardHeader} from "@/components/ui/card";
 
-export default function Profile({params}) {
-    // This would typically come from a database or CMS
-    const username = React.use(params).username.toString();
-    const profile = {
-        name: username,
-        avatar: "/placeholder.svg?height=100&width=100",
-        bio: "Customizable placeholder text",
-        // Ungrouped links (displayed at the top)
-        links: [
-            // {
-            //     title: "Dashboard",
-            //     path: "/dashboard",
-            //     color: "bg-pink-500 hover:bg-pink-600",
-            // },
-        ],
-        // Grouped links
-        groups: [
-            {
-                title: "AniList",
-                links: [
-                    {
-                        title: "Anime",
-                        path: "/user/"+ username + "/anilist/anime",
-                        color: "bg-blue-600 hover:bg-blue-700",
-                    },
-                    {
-                        title: "Manga",
-                        path: "/user/"+ username + "/anilist/manga",
-                        color: "bg-blue-500 hover:bg-blue-600",
-                    },
-                ],
-            },
-
-        ],
-    }
-
+function ProviderLoginButton({index, title, path, color}: {index: number, title: string, path: string, color: string}) {
     return (
-        <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 p-4">
-            <div className="w-full max-w-md space-y-8 py-10">
-                {/* Profile Section */}
-                <div className="flex flex-col items-center justify-center space-y-4 text-center">
-                    <Avatar className="h-24 w-24 border-2 border-white shadow-md">
-                        <AvatarImage src={profile.avatar || "/placeholder.svg"} alt={profile.name} />
-                        <AvatarFallback>{profile.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <h1 className="text-2xl font-bold">{profile.name}</h1>
-                        <p className="text-muted-foreground">{profile.bio}</p>
-                    </div>
-                </div>
+        <Link key={index} href={path} className="block w-full">
+            <Button
+                variant="default"
+                className={`w-full justify-center rounded-full transition-all duration-200 text-white font-medium ${color}`}
+            >
+                {title}
+            </Button>
+        </Link>
+    )
+}
 
-                {/* Ungrouped Links Section */}
-                {profile.links.length > 0 && (
-                    <div className="space-y-4 pt-4">
-                        {profile.links.map((link, index) => (
-                            <Link key={index} href={link.path} className="block w-full">
-                                <Button
-                                    variant="default"
-                                    className={`w-full justify-center ${link.color} text-white transition-all duration-300`}
-                                >
-                                    {link.title}
-                                </Button>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-
-                {/* Grouped Links Section */}
-                {profile.groups.map((group, groupIndex) => (
-                    <div key={groupIndex} className="pt-6">
-                        {/* Group Title */}
-                        <div className="mb-3">
-                            <h2 className="text-lg font-semibold">{group.title}</h2>
-                            <Separator className="mt-1" />
-                        </div>
-
-                        {/* Group Links */}
-                        <div className="space-y-3">
-                            {group.links.map((link, linkIndex) => (
-                                <Link key={linkIndex} href={link.path} className="block w-full">
-                                    <Button
-                                        variant="default"
-                                        className={`w-full justify-center ${link.color} text-white transition-all duration-300`}
-                                    >
-                                        {link.title}
-                                    </Button>
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
+function ProviderGroupButton({index, groupTitle, groupEntries}: { index: number, groupTitle: string, groupEntries: {title: string, path: string, color: string}[]}) {
+    return (
+        <div key={index}>
+            <div className="mb-3">
+                <h2 className="text-lg font-semibold">{groupTitle}</h2>
+                <Separator className="mt-1" />
+            </div>
+            <div className="space-y-3 mt-4">
+                {groupEntries.map((entry, index) => (
+                    <Link key={index} href={entry.path} className="block w-full">
+                        <Button
+                            variant="default"
+                            className={`w-full justify-center rounded-full transition-all duration-200 ${entry.color} text-white font-medium`}
+                        >
+                            {entry.title}
+                        </Button>
+                    </Link>
                 ))}
             </div>
-        </main>
+        </div>
+    )
+}
+
+export default function Profile() {
+    const params = useParams<{username: string}>();
+    const username: string = params.username;
+    const [userConnections, setUserConnections] = useState(null);
+    const { token, isLoading, isAuthenticated, logout } = useAuth();
+
+    useEffect(() => {
+        if (!isLoading && isAuthenticated) {
+            fetchUser(token, username, logout)
+                .then(data => setUserConnections(data))
+                .catch((error) => console.error(error))
+        }
+    }, [username, isLoading, isAuthenticated, token, logout]);
+
+    // Render nothing until connections are loaded
+    if (!userConnections || isLoading) return <LoadingPage />
+
+    return (
+        <ProtectedRoute>
+            <div className="flex items-center justify-center px-4 pt-20">
+                <Card className={cn(
+                    "w-full max-w-md rounded-2xl p-6",
+                    "bg-background/80 backdrop-blur-md border border-border/100 shadow-lg",
+                    "transition-all duration-200 ease-in-out"
+                )}>
+                    <CardHeader className="flex flex-col items-center text-center space-y-4 pt-4 pb-6">
+                        <Avatar className="h-24 w-24 border-2 border-border/50 shadow-md">
+                            <AvatarImage src={"/avatar.svg"} alt={username} />
+                            <AvatarFallback>{username.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <h1 className="text-2xl font-bold">{username}</h1>
+                            <p className="text-muted-foreground mt-1">{userConnections["bio"]}</p>
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-6 pb-4">
+                        {/* Provider Connection Section */}
+                        {!userConnections['aniListConnected']
+                            && <ProviderLoginButton index={0} title={"Connect AniList"} path={"/auth/anilist"} color={"bg-blue-600 hover:bg-blue-700"} />}
+                        {!userConnections['traktConnected']
+                            && <ProviderLoginButton index={1} title={"Connect Trakt"} path={"/auth/trakt"} color={"bg-red-600 hover:bg-red-700"} />}
+
+                        {/* Group Section */}
+                        {userConnections['aniListConnected']
+                            && <ProviderGroupButton index={0} groupTitle={"AniList"} groupEntries={[
+                                { title: "Anime", path: `/user/${username}/anilist/anime`, color: "bg-blue-600 hover:bg-blue-700" },
+                                { title: "Manga", path: `/user/${username}/anilist/manga`, color: "bg-blue-500 hover:bg-blue-600" },
+                            ]}/>}
+                        {userConnections['traktConnected']
+                            && <ProviderGroupButton index={1} groupTitle={"Trakt"} groupEntries={[
+                                { title: "Series", path: `/user/${username}/trakt/series`, color: "bg-red-600 hover:bg-red-700" },
+                                { title: "Movies", path: `/user/${username}/trakt/movies`, color: "bg-red-500 hover:bg-red-600" },
+                            ]}/>}
+                    </CardContent>
+                </Card>
+            </div>
+        </ProtectedRoute>
     )
 }
