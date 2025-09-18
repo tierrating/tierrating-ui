@@ -10,6 +10,7 @@ import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} f
 import {EyeIcon, EyeOffIcon} from "lucide-react"
 import {useAuth} from "@/contexts/AuthContext";
 import {submitSignup} from "@/components/api/user-api";
+import LoadingPage from "@/components/loading-page";
 
 export default function SignupPage() {
     const [showPassword, setShowPassword] = useState(false)
@@ -109,14 +110,12 @@ export default function SignupPage() {
 
     if (authLoading || isAuthenticated) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-pulse text-muted-foreground">Loading...</div>
-            </div>
+            <LoadingPage />
         )
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="flex min-h-screen -mt-24 items-center justify-center bg-background px-4">
             <Card className="w-full max-w-md border-border/40 bg-card/60 backdrop-blur-sm">
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
