@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import {extractJwtData} from "@/components/jwt-decoder";
+import {extractJwtData} from "@/components/auth/jwt-decoder";
 
 interface AuthContextType {
     token: string | null
@@ -30,12 +30,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const storedToken = localStorage.getItem("authToken")
             if (!storedToken) {
                 logout()
+                setIsLoading(false);
                 return;
             }
 
             const decodedJwt = extractJwtData(storedToken);
             if (!decodedJwt || decodedJwt.isExpired) {
                 logout()
+                setIsLoading(false);
                 return;
             }
 

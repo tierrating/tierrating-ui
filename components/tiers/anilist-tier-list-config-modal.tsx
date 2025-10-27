@@ -1,28 +1,32 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import {useEffect, useRef, useState} from "react";
 import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-    DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Wrench, X, Plus, Palette, ArrowUpDown } from "lucide-react";
-import { HexColorPicker } from "react-colorful";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tier } from "@/model/types";
-import { useAuth } from "@/contexts/AuthContext";
-import { fetchTiers } from "@/components/api/tier-api";
-import { Skeleton } from "@/components/ui/skeleton";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {ArrowUpDown, Palette, Plus, Settings, X} from "lucide-react";
+import {HexColorPicker} from "react-colorful";
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
+import {Tier} from "@/model/types";
+import {useAuth} from "@/contexts/auth-context";
+import {Skeleton} from "@/components/ui/skeleton";
 import {getDefaultTiers} from "@/model/defaults";
+import {DataProvider, getProviderByName} from "@/components/data-providers/data-provider";
+import {notFound} from "next/navigation";
 
 interface AniListTierListConfigModalProps {
     initialTiers?: Tier[];
+    type: string;
     onSave: (tiers: Tier[]) => void;
+    providerName: string;
+    username: string;
 }
 
 // Default tier colors
@@ -38,20 +42,26 @@ export const DEFAULT_COLORS = [
 
 export default function AniListTierListConfigModal({
                                                        initialTiers = [],
+                                                       type,
                                                        onSave,
+                                                       providerName,
+                                                       username
                                                    }: AniListTierListConfigModalProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [tiers, setTiers] = useState<Tier[]>([]);
     const [queryRunning, setQueryRunning] = useState(false);
-    const { user, token, isLoading, isAuthenticated, logout } = useAuth();
-    const username = "RatzzFatzz";
+    const {token, isLoading, isAuthenticated, logout} = useAuth();
     const dataFetched = useRef(false);
+    const provider: DataProvider | undefined = getProviderByName(providerName.toLowerCase());
+    if (!provider) {
+        notFound();
+    }
 
     // Only fetch data when the modal is opened
     useEffect(() => {
         if (isOpen && !dataFetched.current && !isLoading && isAuthenticated) {
             setQueryRunning(true);
-            fetchTiers(token, username, "anilist", "anime", logout)
+            provider.fetchTierlist(token, username, logout)
                 .then((data: Tier[]) => {
                     setTiers(data && data.length > 0 ? data : getDefaultTiers());
                     dataFetched.current = true;
@@ -59,7 +69,7 @@ export default function AniListTierListConfigModal({
                 .catch((error) => console.error(error))
                 .finally(() => setQueryRunning(false));
         }
-    }, [isOpen, isLoading, isAuthenticated, token, username, logout]);
+    }, [isOpen, isLoading, isAuthenticated, token, type, logout, provider, username]);
 
     // Sort tiers whenever they change
     useEffect(() => {
@@ -71,6 +81,10 @@ export default function AniListTierListConfigModal({
             setTiers(sortedTiers);
         }
     }, [tiers]);
+
+    const restoreDefaults = () => {
+        setTiers(getDefaultTiers());
+    }
 
     const addTier = () => {
         if (!tiers) return;
@@ -99,7 +113,7 @@ export default function AniListTierListConfigModal({
     const updateTier = (id: string, field: keyof Tier, value: string | number) => {
         const updatedTiers = tiers.map((tier) => {
             if (tier.id === id) {
-                return { ...tier, [field]: value };
+                return {...tier, [field]: value};
             }
             return tier;
         });
@@ -163,11 +177,11 @@ export default function AniListTierListConfigModal({
                 {Array(4).fill(0).map((_, index2) => (
                     // eslint-disable-next-line react/jsx-key
                     <div key={`skeleton-${index}-${index2}`}>
-                        <Skeleton className="h-9 w-full" />
+                        <Skeleton className="h-9 w-full"/>
                     </div>
                 ))}
                 <div>
-                    <Skeleton className="h-9 w-9" />
+                    <Skeleton className="h-9 w-9"/>
                 </div>
             </div>
         ));
@@ -175,19 +189,19 @@ export default function AniListTierListConfigModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-            <DialogTrigger className="p-1.5" onClick={handleTriggerClick}>
-                <Wrench />
+            <DialogTrigger className="p-1.5 cursor-pointer" onClick={handleTriggerClick}>
+                <Settings/>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[650px] max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Configure tier list</DialogTitle>
                     <DialogDescription>
-                        Configure which score should be assigned to which tier. Also set a score value and color for each tier,
-                        which will be set when dropping an element to that tier.
+                        Configure which <i>score</i> should be assigned to which tier.
+                        When dropping an item into a new tier their score will be set to <i>adjusted score</i>
                         These changes will be sent back to the corresponding service provider.
                     </DialogDescription>
                     <p className="mt-1 font-medium text-sm flex items-center">
-                        <ArrowUpDown className="h-3 w-3 mr-1" />
+                        <ArrowUpDown className="h-3 w-3 mr-1"/>
                         Tiers are automatically sorted by score in descending order.
                     </p>
                 </DialogHeader>
@@ -219,9 +233,9 @@ export default function AniListTierListConfigModal({
                                             >
                                                 <div
                                                     className="h-6 w-6 rounded-sm"
-                                                    style={{ backgroundColor: tier.color }}
+                                                    style={{backgroundColor: tier.color}}
                                                 />
-                                                <Palette className="h-4 w-4" />
+                                                <Palette className="h-4 w-4"/>
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-3" align="start">
@@ -301,7 +315,7 @@ export default function AniListTierListConfigModal({
                                     disabled={tiers.length <= 1}
                                     className="h-9 w-9 hover:bg-red-100 dark:hover:bg-red-800/30 transition-colors"
                                 >
-                                    <X className="h-4 w-4" />
+                                    <X className="h-4 w-4"/>
                                 </Button>
                             </div>
                         ))
@@ -313,10 +327,13 @@ export default function AniListTierListConfigModal({
                         onClick={addTier}
                         disabled={queryRunning}
                     >
-                        <Plus className="h-4 w-4" /> Add Tier
+                        <Plus className="h-4 w-4"/> Add Tier
                     </Button>
                 </div>
                 <DialogFooter className="flex gap-2">
+                    <Button variant="secondary" onClick={restoreDefaults} className="mr-auto">
+                        Restore defaults
+                    </Button>
                     <Button variant="outline" onClick={() => setIsOpen(false)}>
                         Cancel
                     </Button>

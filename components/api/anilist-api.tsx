@@ -1,64 +1,28 @@
-import type {RatingItem} from "@/model/types";
+"use server"
+
 import {API_URL} from "@/components/global-config";
+import {ServerResponse, ThirdPartyAuthResponse} from "@/model/response-types";
 
-export const fetchWithApi = async (token: string, username: string, type: string, logout: () => void): Promise<RatingItem[]> => {
-    if (!token) {
-        throw new Error("No authentication token")
-    }
-    const headers = {
-        Authorization: `Bearer ${token}`,
-    }
-    try {
-        const response = await fetch(`${API_URL}/anilist/${username}/${type}`, {headers});
-
-        if (response.status === 401 || response.status === 403) {
-            logout();
-            throw new Error("Session expired");
-        }
-
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-        }
-
-        const text = await response.text();
-        if (!text) {
-            return [];
-        }
-
-        const data = JSON.parse(text);
-        const items = Array.isArray(data) ? data : (data.items || []);
-
-        return items.map((item: RatingItem) => ({
-            id: item.id.toString(),
-            score: item.score,
-            title: item.title,
-            cover: item.cover,
-            tier: item.tier,
-        }));
-    } catch (error) {
-        console.error("API request failed: ", error)
-        throw error
-    }
-}
-
-export const authorize = async(username: string | null, token: string | null, code: string | null)=> {
+export default async function authorize(username: string | null, token: string | null, code: string | null): Promise<ServerResponse<ThirdPartyAuthResponse>> {
     if (!username && !token && !code) {
-        return new Error("Invalid username, token or code")
+        throw new Error("Invalid username, token or code")
     }
 
-    const response = await fetch(`${API_URL}/anilist/auth/${username}`, {
-        method: 'POST',
-        headers: {
-            "Authorization": "Bearer " + token,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({code})
-    })
+    try {
+        const response = await fetch(`${API_URL}/anilist/auth/${username}`, {
+            method: 'POST',
+            headers: {
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({code})
+        });
 
-    if (!response.ok) {
-        return new Error('Could not authorize with AniList');
+        const data = await response.json().catch(() => null)
+        return {data, status: response.status};
+    } catch (error) {
+        console.error('API proxy error: ', error);
+        return {error: 'Server unavailable', status: 500}
     }
-
-    return await response.json();
 }
 

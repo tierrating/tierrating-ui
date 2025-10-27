@@ -1,60 +1,59 @@
+"use server"
 import {API_URL} from "@/components/global-config";
+import {LoginResponse, ServerResponse, SignupResponse, UserResponse} from "@/model/response-types";
 
-export const fetchUser = async (token: string | null, username: string, logout: () => void) => {
-    if (!token) {
-        throw new Error("No authentication token")
-    }
-    const headers = {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-    }
+export async function requestLogin(username: string, password: string): Promise<ServerResponse<LoginResponse>> {
     try {
-        const response = await fetch(`${API_URL}/user/${username}`, {headers});
+        const response = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({username, password}),
+        });
 
-        if (response.status === 401 || response.status === 403) {
-            logout();
-            throw new Error("Session expired");
-        }
-
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-        }
-
-        return await response.json();
+        const data = await response.json().catch(() => null)
+        return {data, status: response.status};
     } catch (error) {
-        console.error("API request failed: ", error)
-        throw error
+        console.error('API proxy error: ', error);
+        return {error: 'Server unavailable', status: 500}
     }
 }
 
-export const requestLogin = async (username: string, password: string) => {
-    const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-    })
+export async function submitSignup(username: string, email: string, password: string): Promise<ServerResponse<SignupResponse>> {
+    try {
+        const response = await fetch(`${API_URL}/auth/signup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({username, email, password}),
+        });
 
-    if (!response.ok) {
-        throw new Error('Invalid credentials')
+        const data = await response.json().catch(() => null)
+        return {data, status: response.status};
+    } catch (error) {
+        console.error('API proxy error: ', error);
+        return {error: 'Server unavailable', status: 500}
     }
-
-    return await response.json()
 }
 
-export const submitSignup = async (username: string, email: string, password: string) => {
-    const response = await fetch(`${API_URL}/auth/signup`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, email, password }),
-    })
+export async function fetchUser(token: string | null, username: string): Promise<ServerResponse<UserResponse>> {
+    if (!token) throw new Error("No authentication token")
 
-    if (!response.ok) {
-        throw new Error('Internal Server Error or API rejected request')
+    try {
+        const response = await fetch(`${API_URL}/user/${username}`, {
+            method: 'GET',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            }
+        });
+
+        const data = await response.json().catch(() => null)
+        return {data, status: response.status};
+    } catch (error) {
+        console.error('API proxy error: ', error);
+        return {error: 'Server unavailable', status: 500}
     }
-
-    return await response.json()
 }
