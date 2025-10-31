@@ -9,8 +9,8 @@ import LoadingPage from "@/components/loading-page";
 import {cn} from "@/lib/utils"
 import {Card, CardContent, CardHeader} from "@/components/ui/card";
 import {UserResponse} from "@/model/response-types";
-import ThirdPartyLoginButton from "@/app/user/[username]/ThirdPartyLoginButton";
-import ThirdPartyGroupBox from "@/app/user/[username]/ThirdPartyGroupBox";
+import ThirdPartyLoginButton from "@/app/user/[username]/third-party-login-button";
+import ThirdPartyGroupBox from "@/app/user/[username]/third-party-group-box";
 
 
 export default function Profile() {
@@ -47,7 +47,7 @@ export default function Profile() {
                 <Card className={cn(
                     "min-w-md z-50",
                     "flex flex-col rounded-2xl",
-                    "bg-background/80 backdrop-blur-sm border border-border/100 shadow-lg",
+                    "bg-card/60 backdrop-blur-sm border border-border/100 shadow-lg",
                 )}>
                     <CardHeader className="flex flex-row items-center text-center pb-6">
                         <Avatar className="h-24 w-24 border-2 border-border/50 shadow-md">
@@ -75,11 +75,13 @@ export default function Profile() {
                                                    groupEntries={[
                                                         {
                                                             title: "Anime",
+                                                            type: "anime",
                                                             path: `/user/${userResponse.username}/anilist/anime`,
                                                             color: "bg-blue-600 hover:bg-blue-700"
                                                         },
                                                         {
                                                             title: "Manga",
+                                                            type: "manga",
                                                             path: `/user/${userResponse.username}/anilist/manga`,
                                                             color: "bg-blue-500 hover:bg-blue-600"
                                                         },
@@ -88,12 +90,14 @@ export default function Profile() {
                             && <ThirdPartyGroupBox index={1} configAllowed={isConfigAllowed} groupTitle={"Trakt"}
                                                    groupEntries={[
                                                         {
-                                                            title: "Series",
-                                                            path: `/user/${userResponse.username}/trakt/series`,
+                                                            title: "TV shows",
+                                                            type: "tvshows",
+                                                            path: `/user/${userResponse.username}/trakt/tvshows`,
                                                             color: "bg-red-600 hover:bg-red-700"
                                                         },
                                                         {
                                                             title: "Movies",
+                                                            type: "movies",
                                                             path: `/user/${userResponse.username}/trakt/movies`,
                                                             color: "bg-red-500 hover:bg-red-600"
                                                         },
