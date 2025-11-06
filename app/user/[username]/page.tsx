@@ -10,7 +10,7 @@ import {cn} from "@/lib/utils"
 import {Card, CardContent, CardHeader} from "@/components/ui/card";
 import {UserResponse} from "@/model/response-types";
 import ThirdPartyLoginButton from "@/app/user/[username]/third-party-login-button";
-import ThirdPartyGroupBox from "@/app/user/[username]/third-party-group-box";
+import ThirdPartyButton from "@/app/user/[username]/third-party-button";
 
 
 export default function Profile() {
@@ -43,9 +43,9 @@ export default function Profile() {
 
     return (
         <ProtectedRoute>
-            <div className="flex min-h-screen -mt-24 items-center justify-center ">
+            <div className="flex min-h-screen -mt-24 items-center justify-center px-4">
                 <Card className={cn(
-                    "min-w-md z-50",
+                    "w-full max-w-md z-50",
                     "flex flex-col rounded-2xl",
                     "bg-card/60 backdrop-blur-sm border border-border/100 shadow-lg",
                 )}>
@@ -60,48 +60,22 @@ export default function Profile() {
                         </div>
                     </CardHeader>
 
-                    <CardContent className="space-y-6">
+                    <CardContent className="space-y-4">
                         {/* Provider Connection Section */}
                         {isConfigAllowed && !userResponse.anilistConnected
                             && <ThirdPartyLoginButton index={0} title={"Connect AniList"} path={"/auth/anilist"}
-                                                      color={"bg-blue-600 hover:bg-blue-700"}/>}
+                                                      color={"bg-blue-600 hover:bg-blue-700"} service="anilist"/>}
                         {isConfigAllowed && !userResponse.traktConnected
                             && <ThirdPartyLoginButton index={1} title={"Connect Trakt"} path={"/auth/trakt"}
-                                                      color={"bg-red-600 hover:bg-red-700"}/>}
+                                                      color={"bg-red-600 hover:bg-red-700"} service="trakt"/>}
 
-                        {/* Group Section */}
-                        {userResponse.anilistConnected
-                            && <ThirdPartyGroupBox index={0} configAllowed={isConfigAllowed} groupTitle={"AniList"}
-                                                   groupEntries={[
-                                                        {
-                                                            title: "Anime",
-                                                            type: "anime",
-                                                            path: `/user/${userResponse.username}/anilist/anime`,
-                                                            color: "bg-blue-600 hover:bg-blue-700"
-                                                        },
-                                                        {
-                                                            title: "Manga",
-                                                            type: "manga",
-                                                            path: `/user/${userResponse.username}/anilist/manga`,
-                                                            color: "bg-blue-500 hover:bg-blue-600"
-                                                        },
-                                                    ]} logout={logout} token={token} username={userResponse.username}/>}
-                        {userResponse.traktConnected
-                            && <ThirdPartyGroupBox index={1} configAllowed={isConfigAllowed} groupTitle={"Trakt"}
-                                                   groupEntries={[
-                                                        {
-                                                            title: "TV shows",
-                                                            type: "tvshows",
-                                                            path: `/user/${userResponse.username}/trakt/tvshows`,
-                                                            color: "bg-red-600 hover:bg-red-700"
-                                                        },
-                                                        {
-                                                            title: "Movies",
-                                                            type: "movies",
-                                                            path: `/user/${userResponse.username}/trakt/movies`,
-                                                            color: "bg-red-500 hover:bg-red-600"
-                                                        },
-                                                    ]} logout={logout} token={token} username={userResponse.username}/>}
+                        <div className="grid columns-1 gap-4">
+                            {userResponse.anilistConnected && <ThirdPartyButton service={"anilist"} type={"anime"} title={"Anime"} username={userResponse.username} configAllowed={isConfigAllowed} token={token} logout={logout}/>}
+                            {userResponse.anilistConnected && <ThirdPartyButton service={"anilist"} type={"manga"} title={"Manga"} username={userResponse.username} configAllowed={isConfigAllowed} token={token} logout={logout}/>}
+                            {userResponse.traktConnected && <ThirdPartyButton service={"trakt"} type={"movies"} title={"Movies"} username={userResponse.username} configAllowed={isConfigAllowed} token={token} logout={logout}/>}
+                            {userResponse.traktConnected && <ThirdPartyButton service={"trakt"} type={"tvshows"} title={"TV Shows"} username={userResponse.username} configAllowed={isConfigAllowed} token={token} logout={logout}/>}
+                            {userResponse.traktConnected && <ThirdPartyButton service={"trakt"} type={"tvshows-seasons"} title={"TV Shows - Seasons"} username={userResponse.username} configAllowed={isConfigAllowed} token={token} logout={logout}/>}
+                        </div>
                     </CardContent>
                 </Card>
             </div>
