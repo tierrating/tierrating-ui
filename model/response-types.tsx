@@ -14,6 +14,11 @@ export interface SignupResponse {
     signupSuccess: boolean;
 }
 
+export interface GenericResponse {
+    success: boolean;
+    message: string;
+}
+
 export interface UserResponse {
     id: number;
     username: string;
@@ -30,4 +35,8 @@ export interface UpdateScoreResponse {
 
 export interface ThirdPartyAuthResponse {
     message: string
+}
+
+export interface ThirdPartyInfoResponse {
+    clientId: string;
 }
