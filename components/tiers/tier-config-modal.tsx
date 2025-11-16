@@ -14,19 +14,19 @@ import {Input} from "@/components/ui/input";
 import {ArrowUpDown, Palette, Plus, Settings, X} from "lucide-react";
 import {HexColorPicker} from "react-colorful";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import {Tier} from "@/model/types";
-import {useAuth} from "@/contexts/auth-context";
-import {Skeleton} from "@/components/ui/skeleton";
-import {getDefaultTiers} from "@/model/defaults";
+import {Tier} from "@/components/model/types";
+import {useAuth} from "@/components/contexts/auth-context";
+import {getDefaultTiers} from "@/components/model/defaults";
 import {DataProvider, getProviderByName} from "@/components/data-providers/data-provider";
-import {notFound} from "next/navigation";
+import {TierConfigTableSkeleton} from "@/components/loading-skeletons/tier-config-table-skeleton";
 
-interface AniListTierListConfigModalProps {
+interface TierConfigModalProps {
     initialTiers?: Tier[];
+    service: string;
     type: string;
     onSave: (tiers: Tier[]) => void;
-    providerName: string;
     username: string;
+    decimals: string;
 }
 
 // Default tier colors
@@ -40,22 +40,15 @@ export const DEFAULT_COLORS = [
     "#FF7FBF", // F - Pink
 ];
 
-export default function AniListTierListConfigModal({
-                                                       initialTiers = [],
-                                                       type,
-                                                       onSave,
-                                                       providerName,
-                                                       username
-                                                   }: AniListTierListConfigModalProps) {
+export default function TierConfigModal({initialTiers = [], service, type, onSave, username, decimals}: TierConfigModalProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [tiers, setTiers] = useState<Tier[]>([]);
     const [queryRunning, setQueryRunning] = useState(false);
+
     const {token, isLoading, isAuthenticated, logout} = useAuth();
+    const provider: DataProvider = getProviderByName(`${service}-${type}`);
+
     const dataFetched = useRef(false);
-    const provider: DataProvider | undefined = getProviderByName(providerName.toLowerCase());
-    if (!provider) {
-        notFound();
-    }
 
     // Only fetch data when the modal is opened
     useEffect(() => {
@@ -149,7 +142,7 @@ export default function AniListTierListConfigModal({
     };
 
     // Trigger the dialog to open
-    const handleTriggerClick = () => {
+    const handleOpenTrigger = () => {
         setIsOpen(true);
     };
 
@@ -167,33 +160,10 @@ export default function AniListTierListConfigModal({
         return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
     };
 
-    // Skeleton tier rows
-    const renderSkeletonTiers = () => {
-        return Array(5).fill(0).map((_, index) => (
-            <div
-                key={`skeleton-${index}`}
-                className="grid grid-cols-[60px_1fr_100px_120px_40px] gap-4 items-center"
-            >
-                {Array(4).fill(0).map((_, index2) => (
-                    // eslint-disable-next-line react/jsx-key
-                    <div key={`skeleton-${index}-${index2}`}>
-                        <Skeleton className="h-9 w-full"/>
-                    </div>
-                ))}
-                <div>
-                    <Skeleton className="h-9 w-9"/>
-                </div>
-            </div>
-        ));
-    };
-
     return (
-        <Dialog open={isOpen} onOpenChange={handleOpenChange} >
-            <DialogTrigger asChild className="p-0 cursor-pointer" onClick={handleTriggerClick}>
-                <Button
-                    variant={"ghost"}
-                    className="w-full h-full"
-                >
+        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild className="p-0 cursor-pointer" onClick={handleOpenTrigger}>
+                <Button variant={"ghost"} className="w-full h-full">
                     <Settings/>
                 </Button>
             </DialogTrigger>
@@ -202,7 +172,7 @@ export default function AniListTierListConfigModal({
                     <DialogTitle>Configure tier list</DialogTitle>
                     <DialogDescription>
                         Configure which <i>score</i> should be assigned to which tier.
-                        When dropping an item into a new tier their score will be set to <i>adjusted score</i>
+                        When dropping an item into a new tier their score will be set to <i>adjusted score</i>.
                         These changes will be sent back to the corresponding service provider.
                     </DialogDescription>
                     <p className="mt-1 font-medium text-sm flex items-center">
@@ -220,10 +190,8 @@ export default function AniListTierListConfigModal({
                     </div>
 
                     {queryRunning ? (
-                        // Skeleton loading state
-                        renderSkeletonTiers()
+                        <TierConfigTableSkeleton/>
                     ) : (
-                        // Actual tier data
                         tiers && tiers.map((tier) => (
                             <div
                                 key={tier.id}
@@ -288,7 +256,7 @@ export default function AniListTierListConfigModal({
                                                 formatNumberInput(e.target.value)
                                             )
                                         }
-                                        step="0.01"
+                                        step={decimals}
                                         max="10"
                                         min="0"
                                         placeholder="Score"
@@ -300,13 +268,9 @@ export default function AniListTierListConfigModal({
                                         type="number"
                                         value={tier.adjustedScore}
                                         onChange={(e) =>
-                                            updateTier(
-                                                tier.id,
-                                                "adjustedScore",
-                                                formatNumberInput(e.target.value)
-                                            )
+                                            updateTier(tier.id, "adjustedScore", formatNumberInput(e.target.value))
                                         }
-                                        step="0.01"
+                                        step={decimals}
                                         max="10"
                                         min="0"
                                         placeholder="Adjusted Score"

@@ -3,7 +3,7 @@
 import {Button} from "@/components/ui/button";
 import {cn} from "@/lib/utils";
 import Link from "next/link";
-import {useAuth} from "@/contexts/auth-context";
+import {useAuth} from "@/components/contexts/auth-context";
 import {usePathname} from "next/navigation";
 
 export default function NavbarLinks() {
@@ -11,7 +11,7 @@ export default function NavbarLinks() {
     const pathname = usePathname()
 
     return (
-        <div className="flex items-center space-x-1 ml-6 max-sm:hidden">
+        <div className="flex items-center space-x-1 ml-6">
             <Button
                 variant="ghost"
                 asChild

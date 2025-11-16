@@ -1,4 +1,4 @@
-import {Tier} from "@/model/types"; // Make sure to install this package: npm install uuid
+import {Tier} from "@/components/model/types"; // Make sure to install this package: npm install uuid
 
 export function getDefaultTiers(): Tier[] {
     return [
@@ -28,14 +28,14 @@ export function getDefaultTiers(): Tier[] {
             name: "B+",
             score: 7.0,
             adjustedScore: 7.0,
-            color: "#FFFF7F"
+            color: "#e4e449"
         },
         {
             id: crypto.randomUUID(),
             name: "B",
             score: 6.0,
             adjustedScore: 6.0,
-            color: "#BFFF7F"
+            color: "#aae371"
         },
         {
             id: crypto.randomUUID(),
